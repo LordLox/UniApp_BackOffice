@@ -48,7 +48,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: ghcr.io/lordlox/uniapp_web
+    image: ghcr.io/lordlox/uniapp_backoffice
     container_name: uniapp-web
     hostname: uniapp-web
     restart: unless-stopped
