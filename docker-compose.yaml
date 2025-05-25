@@ -1,0 +1,72 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: uniapp-db
+    hostname: uniapp-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-studentapp}
+      MYSQL_USER: ${MYSQL_USER:-studentapp}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-studentapp}
+    env_file:
+      - .env
+    expose:
+      - 3306
+    volumes:
+      - data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - uniapp-network
+
+  api:
+    image: ghcr.io/lordlox/uniapp_backend
+    container_name: uniapp-api
+    hostname: uniapp-api
+    restart: always
+    expose:
+      - 5000
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      ConnectionStrings__DefaultConnection: server=${MYSQL_HOST-db};port=${MYSQL_PORT-3306};database=${MYSQL_DATABASE-studentapp};user=${MYSQL_USER-studentapp};password=${MYSQL_PASSWORD-studentapp};
+      Settings__AESKey: ${AES_KEY}
+      Settings__BCodeElapseSeconds: ${QRCODE_ELAPSE_SECONDS-30}
+      ASPNETCORE_URLS: http://+:5000
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - uniapp-network
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ghcr.io/lordlox/uniapp_web
+    container_name: uniapp-web
+    hostname: uniapp-web
+    restart: unless-stopped
+    ports:
+      - "${APP_HOST_PORT:-3000}:3000"
+    environment:
+      REACT_APP_BACKEND_API_URL: ${REACT_APP_BACKEND_API_URL-http://uniapp-api:5000}
+    env_file:
+      - .env
+    depends_on:
+      api:
+        condition: service_started
+    networks:
+      - uniapp-network
+
+volumes:
+  data:
+
+networks:
+  uniapp-network:
+    driver: bridge

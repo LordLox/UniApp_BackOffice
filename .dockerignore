@@ -1,0 +1,43 @@
+# .dockerignore
+
+# Git files
+.git
+.gitignore
+
+# Node.js modules (these will be installed within the Docker image layers)
+node_modules
+
+# Build output (this will be generated within the Docker image)
+build
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment files (these should be passed at runtime, not baked into the image)
+.env
+.env.*
+!/.env.example # If you have an example env file you want to include for reference
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Editor/IDE specific files
+.vscode/
+.idea/
+
+# Test files (if not needed in production)
+src/**/*.test.js
+src/**/*.spec.js
+coverage/
+
+# README and other markdown files not needed for runtime
+README.md
+*.md
+
+# Dockerfile itself and docker-compose files
+Dockerfile
+docker-compose.yml
+build/
