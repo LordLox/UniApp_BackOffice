@@ -5,6 +5,7 @@ services:
     hostname: uniapp-db
     restart: always
     environment:
+      TZ: Europe/Rome
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
       MYSQL_DATABASE: ${MYSQL_DATABASE:-studentapp}
       MYSQL_USER: ${MYSQL_USER:-studentapp}
@@ -21,7 +22,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - uniapp-network
+      - back_network
 
   api:
     image: ghcr.io/lordlox/uniapp_backend
@@ -31,6 +32,7 @@ services:
     expose:
       - 5000
     environment:
+      TZ: Europe/Rome
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
       ConnectionStrings__DefaultConnection: server=${MYSQL_HOST-db};port=${MYSQL_PORT-3306};database=${MYSQL_DATABASE-studentapp};user=${MYSQL_USER-studentapp};password=${MYSQL_PASSWORD-studentapp};
       Settings__AESKey: ${AES_KEY}
@@ -38,11 +40,17 @@ services:
       ASPNETCORE_URLS: http://+:5000
     env_file:
       - .env
+    healthcheck:
+      test: curl --fail http://localhost:5000/health || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
     depends_on:
       db:
         condition: service_healthy
     networks:
-      - uniapp-network
+      - front_network
+      - back_network
 
   web:
     build:
@@ -55,18 +63,26 @@ services:
     ports:
       - "${APP_HOST_PORT:-3000}:3000"
     environment:
+      TZ: Europe/Rome
       REACT_APP_BACKEND_API_URL: ${REACT_APP_BACKEND_API_URL-http://uniapp-api:5000}
     env_file:
       - .env
+    healthcheck:
+      test: curl --fail http://localhost:3000 || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
     depends_on:
       api:
-        condition: service_started
+        condition: service_healthy
     networks:
-      - uniapp-network
+      - front_network
 
 volumes:
   data:
 
 networks:
-  uniapp-network:
+  front_network:
+    driver: bridge
+  back_network:
     driver: bridge
